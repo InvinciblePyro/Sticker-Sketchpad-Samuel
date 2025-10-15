@@ -13,13 +13,13 @@ const ctx = canvas.getContext("2d");
 
 const cursor = { active: false, x: 0, y: 0 };
 
-canvas.addEventListener("mousedown", (e) => {
+canvas.addEventListener("mousedown", (_e) => {
   cursor.active = true;
   cursor.x = e.offsetX;
   cursor.y = e.offsetY;
 });
 
-canvas.addEventListener("mousemove", (e) => {
+canvas.addEventListener("mousemove", (_e) => {
   if (cursor.active) {
     ctx.beginPath();
     ctx.moveTo(cursor.x, cursor.y);
@@ -30,7 +30,7 @@ canvas.addEventListener("mousemove", (e) => {
   }
 });
 
-canvas.addEventListener("mouseup", (e) => {
+canvas.addEventListener("mouseup", (_e) => {
   cursor.active = false;
 });
 
