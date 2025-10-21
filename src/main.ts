@@ -11,10 +11,10 @@ document.body.append(canvas);
 
 const ctx = canvas.getContext("2d");
 
-const lines = [];
+const lines: { x: number; y: number }[][] = [];
 const redoLines = [];
 
-let currentLine = null;
+let currentLine: { x: number; y: number }[] | null = null;
 
 const cursor = { active: false, x: 0, y: 0 };
 
@@ -35,13 +35,13 @@ canvas.addEventListener("mousemove", (e) => {
   if (cursor.active) {
     cursor.x = e.offsetX;
     cursor.y = e.offsetY;
-    currentLine.push({ x: cursor.x, y: cursor.y });
+    if (currentLine) currentLine.push({ x: cursor.x, y: cursor.y });
 
     redraw();
   }
 });
 
-canvas.addEventListener("mouseup", (e) => {
+canvas.addEventListener("mouseup", (_e) => {
   cursor.active = false;
   currentLine = null;
 
@@ -49,16 +49,18 @@ canvas.addEventListener("mouseup", (e) => {
 });
 
 function redraw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  for (const line of lines) {
-    if (line.length > 1) {
-      ctx.beginPath();
-      const { x, y } = line[0];
-      ctx.moveTo(x, y);
-      for (const { x, y } of line) {
-        ctx.lineTo(x, y);
+  if (ctx) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (const line of lines) {
+      if (line.length > 1) {
+        ctx.beginPath();
+        const { x, y } = line[0];
+        ctx.moveTo(x, y);
+        for (const { x, y } of line) {
+          ctx.lineTo(x, y);
+        }
+        ctx.stroke();
       }
-      ctx.stroke();
     }
   }
 }
