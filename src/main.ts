@@ -12,7 +12,7 @@ document.body.append(canvas);
 const ctx = canvas.getContext("2d");
 
 const lines: { x: number; y: number }[][] = [];
-const redoLines = [];
+const redoLines: { x: number; y: number }[][] = [];
 
 let currentLine: { x: number; y: number }[] | null = null;
 
@@ -52,15 +52,14 @@ function redraw() {
   if (ctx) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     for (const line of lines) {
-      if (line.length > 1) {
-        ctx.beginPath();
-        const { x, y } = line[0];
-        ctx.moveTo(x, y);
-        for (const { x, y } of line) {
-          ctx.lineTo(x, y);
-        }
-        ctx.stroke();
+      if (line.length === 0) continue;
+      ctx.beginPath();
+      const start = line[0]!;
+      ctx.moveTo(start.x, start.y);
+      for (const point of line) {
+        ctx.lineTo(point.x, point.y);
       }
+      ctx.stroke();
     }
   }
 }
@@ -81,8 +80,9 @@ undoButton.innerHTML = "undo";
 document.body.append(undoButton);
 
 undoButton.addEventListener("click", () => {
-  if (lines.length > 0) {
-    redoLines.push(lines.pop());
+  const line = lines.pop();
+  if (line) {
+    redoLines.push(line);
     redraw();
   }
 });
@@ -92,8 +92,9 @@ redoButton.innerHTML = "redo";
 document.body.append(redoButton);
 
 redoButton.addEventListener("click", () => {
-  if (redoLines.length > 0) {
-    lines.push(redoLines.pop());
+  const line = redoLines.pop();
+  if (line) {
+    lines.push(line);
     redraw();
   }
 });
