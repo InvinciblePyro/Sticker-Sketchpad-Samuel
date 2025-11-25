@@ -11,11 +11,41 @@ document.body.append(canvas);
 
 const ctx = canvas.getContext("2d");
 
-const lines: { x: number; y: number }[][] = [];
-const redoLines: { x: number; y: number }[][] = [];
+// Interface for drawable commands
+interface Drawable {
+  display(ctx: CanvasRenderingContext2D): void;
+}
 
-let currentLine: { x: number; y: number }[] | null = null;
+// Marker line command
+class MarkerLine implements Drawable {
+  private points: { x: number; y: number }[] = [];
 
+  constructor(startX: number, startY: number) {
+    this.points.push({ x: startX, y: startY });
+  }
+
+  drag(x: number, y: number): void {
+    this.points.push({ x, y });
+  }
+
+  display(ctx: CanvasRenderingContext2D): void {
+    if (this.points.length === 0) return;
+
+    ctx.beginPath();
+    const first = this.points[0]!;
+    ctx.moveTo(first.x, first.y);
+
+    for (const p of this.points) {
+      ctx.lineTo(p.x, p.y);
+    }
+    ctx.stroke();
+  }
+}
+
+const commands: Drawable[] = [];
+const redoStack: Drawable[] = [];
+
+let currentCommand: MarkerLine | null = null;
 const cursor = { active: false, x: 0, y: 0 };
 
 canvas.addEventListener("mousedown", (e) => {
@@ -23,78 +53,64 @@ canvas.addEventListener("mousedown", (e) => {
   cursor.x = e.offsetX;
   cursor.y = e.offsetY;
 
-  currentLine = [];
-  lines.push(currentLine);
-  redoLines.splice(0, redoLines.length);
-  currentLine.push({ x: cursor.x, y: cursor.y });
+  currentCommand = new MarkerLine(cursor.x, cursor.y);
+  commands.push(currentCommand);
+  redoStack.length = 0; // clear redo history
 
   redraw();
 });
 
 canvas.addEventListener("mousemove", (e) => {
-  if (cursor.active) {
-    cursor.x = e.offsetX;
-    cursor.y = e.offsetY;
-    if (currentLine) currentLine.push({ x: cursor.x, y: cursor.y });
+  if (!cursor.active || !currentCommand) return;
+  cursor.x = e.offsetX;
+  cursor.y = e.offsetY;
 
-    redraw();
-  }
+  currentCommand.drag(cursor.x, cursor.y);
+  redraw();
 });
 
-canvas.addEventListener("mouseup", (_e) => {
+canvas.addEventListener("mouseup", () => {
   cursor.active = false;
-  currentLine = null;
-
+  currentCommand = null;
   redraw();
 });
 
 function redraw() {
-  if (ctx) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    for (const line of lines) {
-      if (line.length === 0) continue;
-      ctx.beginPath();
-      const start = line[0]!;
-      ctx.moveTo(start.x, start.y);
-      for (const point of line) {
-        ctx.lineTo(point.x, point.y);
-      }
-      ctx.stroke();
-    }
+  if (!ctx) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  for (const c of commands) {
+    c.display(ctx);
   }
 }
 
 document.body.append(document.createElement("br"));
 
+// Clear
 const clearButton = document.createElement("button");
 clearButton.innerHTML = "clear";
 document.body.append(clearButton);
-
 clearButton.addEventListener("click", () => {
-  lines.splice(0, lines.length);
+  commands.length = 0;
   redraw();
 });
 
+// Undo
 const undoButton = document.createElement("button");
 undoButton.innerHTML = "undo";
 document.body.append(undoButton);
-
 undoButton.addEventListener("click", () => {
-  const line = lines.pop();
-  if (line) {
-    redoLines.push(line);
-    redraw();
-  }
+  const cmd = commands.pop();
+  if (cmd) redoStack.push(cmd);
+  redraw();
 });
 
+// Redo
 const redoButton = document.createElement("button");
 redoButton.innerHTML = "redo";
 document.body.append(redoButton);
-
 redoButton.addEventListener("click", () => {
-  const line = redoLines.pop();
-  if (line) {
-    lines.push(line);
-    redraw();
-  }
+  const cmd = redoStack.pop();
+  if (cmd) commands.push(cmd);
+  redraw();
 });
