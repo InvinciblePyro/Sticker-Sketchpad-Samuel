@@ -198,7 +198,7 @@ document.body.append(document.createElement("br"));
 const stickerButtons: HTMLButtonElement[] = [];
 
 // initial stickers
-const stickers: string[] = ["⭐", "❤️", "🔥"];
+const stickers: string[] = ["⭐", "❤️", "🔥", "💯", "💀", "🪨"];
 
 // create buttons dynamically for all stickers
 function refreshStickerButtons() {
