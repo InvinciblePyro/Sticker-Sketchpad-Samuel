@@ -16,15 +16,39 @@ interface Drawable {
   display(ctx: CanvasRenderingContext2D): void;
 }
 
+// -------- Tool Randomization --------
+let currentColor = "black";
+let currentRotation = 0; // for stickers
+
+// Utility function to pick a random color
+function getRandomColor(): string {
+  const r = Math.floor(Math.random() * 256);
+  const g = Math.floor(Math.random() * 256);
+  const b = Math.floor(Math.random() * 256);
+  return `rgb(${r},${g},${b})`;
+}
+
+// Utility function to pick a random rotation (in degrees)
+function getRandomRotation(): number {
+  return Math.random() * 360;
+}
+
 // ---------------- Marker Line ----------------
 
 class MarkerLine implements Drawable {
   private points: { x: number; y: number }[] = [];
   private thickness: number;
+  private color: string;
 
-  constructor(startX: number, startY: number, thickness: number = 1) {
+  constructor(
+    startX: number,
+    startY: number,
+    thickness: number = 1,
+    color: string = "black",
+  ) {
     this.points.push({ x: startX, y: startY });
     this.thickness = thickness;
+    this.color = color;
   }
 
   drag(x: number, y: number): void {
@@ -40,6 +64,7 @@ class MarkerLine implements Drawable {
       ctx.lineTo(p.x, p.y);
     }
     ctx.lineWidth = this.thickness;
+    ctx.strokeStyle = this.color;
     ctx.stroke();
   }
 }
@@ -59,24 +84,44 @@ class ToolPreview implements Drawable {
 // ---------------- Sticker Commands ----------------
 
 class StickerPreview implements Drawable {
-  constructor(public x: number, public y: number, public emoji: string) {}
+  constructor(
+    public x: number,
+    public y: number,
+    public emoji: string,
+    public rotation: number = 0,
+  ) {}
   display(ctx: CanvasRenderingContext2D) {
+    ctx.save();
     ctx.globalAlpha = 0.4;
+    ctx.translate(this.x, this.y);
+    ctx.rotate((this.rotation * Math.PI) / 180);
     ctx.font = "32px serif";
-    ctx.fillText(this.emoji, this.x - 16, this.y + 16);
+    ctx.fillText(this.emoji, -16, 16);
+    ctx.restore();
     ctx.globalAlpha = 1.0;
   }
 }
 
 class StickerCommand implements Drawable {
-  constructor(public x: number, public y: number, public emoji: string) {}
+  constructor(
+    public x: number,
+    public y: number,
+    public emoji: string,
+    public rotation: number = 0,
+  ) {}
+
   drag(x: number, y: number) {
     this.x = x;
     this.y = y;
   }
+
   display(ctx: CanvasRenderingContext2D) {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate((this.rotation * Math.PI) / 180);
     ctx.font = "32px serif";
-    ctx.fillText(this.emoji, this.x - 16, this.y + 16);
+    ctx.fillText(this.emoji, -16, 16);
+    ctx.restore();
   }
 }
 
@@ -109,9 +154,19 @@ canvas.addEventListener("mousedown", (e) => {
   redoStack.length = 0; // clear redo list
 
   if (activeTool === ToolType.Marker) {
-    currentCommand = new MarkerLine(cursor.x, cursor.y, currentThickness);
+    currentCommand = new MarkerLine(
+      cursor.x,
+      cursor.y,
+      currentThickness,
+      currentColor,
+    );
   } else {
-    currentCommand = new StickerCommand(cursor.x, cursor.y, activeEmoji);
+    currentCommand = new StickerCommand(
+      cursor.x,
+      cursor.y,
+      activeEmoji,
+      currentRotation,
+    );
   }
 
   commands.push(currentCommand);
@@ -133,7 +188,12 @@ canvas.addEventListener("mousemove", (e) => {
     if (activeTool === ToolType.Marker) {
       toolPreview = new ToolPreview(cursor.x, cursor.y, currentThickness);
     } else {
-      toolPreview = new StickerPreview(cursor.x, cursor.y, activeEmoji);
+      toolPreview = new StickerPreview(
+        cursor.x,
+        cursor.y,
+        activeEmoji,
+        currentRotation,
+      );
     }
   }
   redraw();
@@ -183,11 +243,14 @@ function selectTool(button: HTMLButtonElement) {
 thinButton.addEventListener("click", () => {
   currentThickness = 3;
   activeTool = ToolType.Marker;
+  currentColor = getRandomColor();
   selectTool(thinButton);
 });
+
 thickButton.addEventListener("click", () => {
   currentThickness = 8;
   activeTool = ToolType.Marker;
+  currentColor = getRandomColor();
   selectTool(thickButton);
 });
 
@@ -213,8 +276,14 @@ function refreshStickerButtons() {
     btn.addEventListener("click", () => {
       activeEmoji = emoji;
       activeTool = ToolType.Sticker;
+      currentRotation = getRandomRotation();
       selectTool(btn);
-      toolPreview = new StickerPreview(cursor.x, cursor.y, activeEmoji);
+      toolPreview = new StickerPreview(
+        cursor.x,
+        cursor.y,
+        activeEmoji,
+        currentRotation,
+      );
       redraw();
     });
 
