@@ -270,3 +270,34 @@ redoButton.addEventListener("click", () => {
   if (cmd) commands.push(cmd);
   redraw();
 });
+
+// -------- Export High Resolution ( Step 10 ) --------
+
+const exportButton = document.createElement("button");
+exportButton.textContent = "Export PNG";
+document.body.append(exportButton);
+
+exportButton.addEventListener("click", () => {
+  // Create a large temporary canvas
+  const exportSize = 1024;
+  const scale = exportSize / canvas.width; // If canvas is 256px → scale = 4
+
+  const exportCanvas = document.createElement("canvas");
+  exportCanvas.width = exportSize;
+  exportCanvas.height = exportSize;
+  const exportCtx = exportCanvas.getContext("2d")!;
+
+  // Scale up drawing (so it doesn't just shrink into a corner)
+  exportCtx.scale(scale, scale);
+
+  // Redraw all commands on the new canvas (NO preview)
+  for (const cmd of commands) {
+    cmd.display(exportCtx);
+  }
+
+  // Turn into PNG and download
+  const anchor = document.createElement("a");
+  anchor.href = exportCanvas.toDataURL("image/png");
+  anchor.download = "sketchpad.png";
+  anchor.click();
+});
