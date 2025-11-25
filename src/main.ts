@@ -173,11 +173,9 @@ thickButton.textContent = "Thick";
 document.body.append(thickButton);
 
 function selectTool(button: HTMLButtonElement) {
-  thinButton.classList.remove("selectedTool");
-  thickButton.classList.remove("selectedTool");
-  starButton.classList.remove("selectedTool");
-  heartButton.classList.remove("selectedTool");
-  fireButton.classList.remove("selectedTool");
+  document.querySelectorAll("button").forEach((btn) =>
+    btn.classList.remove("selectedTool")
+  );
   button.classList.add("selectedTool");
 }
 
@@ -193,32 +191,56 @@ thickButton.addEventListener("click", () => {
   selectTool(thickButton);
 });
 
-// Sticker buttons
-const starButton = document.createElement("button");
-starButton.textContent = "⭐";
-document.body.append(starButton);
+document.body.append(document.createElement("br"));
 
-const heartButton = document.createElement("button");
-heartButton.textContent = "❤️";
-document.body.append(heartButton);
+// -------- Data-Driven Stickers --------
 
-const fireButton = document.createElement("button");
-fireButton.textContent = "🔥";
-document.body.append(fireButton);
+const stickerButtons: HTMLButtonElement[] = [];
 
-// Sticker selection behavior
-function chooseSticker(btn: HTMLButtonElement, emoji: string) {
-  activeEmoji = emoji;
-  activeTool = ToolType.Sticker;
-  selectTool(btn);
-  // fire tool-moved preview update
-  toolPreview = new StickerPreview(cursor.x, cursor.y, activeEmoji);
-  redraw();
+// initial stickers
+const stickers: string[] = ["⭐", "❤️", "🔥"];
+
+// create buttons dynamically for all stickers
+function refreshStickerButtons() {
+  stickerButtons.forEach((b) => b.remove());
+  stickerButtons.length = 0;
+
+  for (const emoji of stickers) {
+    const btn = document.createElement("button");
+    btn.textContent = emoji;
+    document.body.append(btn);
+
+    btn.addEventListener("click", () => {
+      activeEmoji = emoji;
+      activeTool = ToolType.Sticker;
+      selectTool(btn);
+      toolPreview = new StickerPreview(cursor.x, cursor.y, activeEmoji);
+      redraw();
+    });
+
+    stickerButtons.push(btn);
+  }
 }
 
-starButton.addEventListener("click", () => chooseSticker(starButton, "⭐"));
-heartButton.addEventListener("click", () => chooseSticker(heartButton, "❤️"));
-fireButton.addEventListener("click", () => chooseSticker(fireButton, "🔥"));
+refreshStickerButtons();
+
+// -------- Custom Sticker Button --------
+
+const addStickerBtn = document.createElement("button");
+addStickerBtn.textContent = "➕ Custom Sticker";
+document.body.append(addStickerBtn);
+
+addStickerBtn.addEventListener("click", () => {
+  const newEmoji = prompt("Enter your sticker:", "🌟");
+
+  if (newEmoji && newEmoji.trim().length > 0) {
+    stickers.push(newEmoji);
+    refreshStickerButtons();
+    activeEmoji = newEmoji;
+    activeTool = ToolType.Sticker;
+    redraw();
+  }
+});
 
 // Clear
 const clearButton = document.createElement("button");
