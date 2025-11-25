@@ -97,7 +97,7 @@ let currentCommand: MarkerLine | StickerCommand | null = null;
 let toolPreview: ToolPreview | StickerPreview | null = null;
 
 const cursor = { active: false, x: 0, y: 0 };
-let currentThickness = 2;
+let currentThickness = 3;
 
 // ---------------- Canvas Input Events ----------------
 
@@ -181,12 +181,12 @@ function selectTool(button: HTMLButtonElement) {
 
 // Marker buttons
 thinButton.addEventListener("click", () => {
-  currentThickness = 2;
+  currentThickness = 3;
   activeTool = ToolType.Marker;
   selectTool(thinButton);
 });
 thickButton.addEventListener("click", () => {
-  currentThickness = 6;
+  currentThickness = 8;
   activeTool = ToolType.Marker;
   selectTool(thickButton);
 });
